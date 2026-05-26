@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
+import ShopRegisterPage from '@/pages/ShopRegisterPage';
 import AdminLayout from '@/components/layout/AdminLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import ProductsPage from '@/pages/ProductsPage';
@@ -51,6 +52,7 @@ export default function App() {
       {/* ─── ADMIN PANEL ─── */}
       <Route path="/admin/login" element={<LoginPage />} />
       <Route path="/admin/register" element={<RegisterPage />} />
+      <Route path="/register" element={<ShopRegisterPage />} />
       <Route
         path="/admin"
         element={

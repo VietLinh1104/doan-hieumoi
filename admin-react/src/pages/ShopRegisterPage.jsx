@@ -5,11 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AuthAdminAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { Lock, Mail, Store, Eye, EyeOff, User } from 'lucide-react';
+import { Lock, Mail, Store, Eye, EyeOff, User, Phone } from 'lucide-react';
 
 const schema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
   email: z.string().min(1, 'Vui lòng nhập email').email('Email không hợp lệ'),
+  phone: z.string().optional(),
   password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
   confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -17,7 +18,7 @@ const schema = z.object({
   path: ["confirmPassword"],
 });
 
-export default function RegisterPage() {
+export default function ShopRegisterPage() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState('');
@@ -28,22 +29,23 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
-  if (isAuthenticated) return <Navigate to="/admin/dashboard" replace />;
+  if (isAuthenticated) return <Navigate to="/" replace />;
 
   const onSubmit = async (data) => {
     setServerError('');
     try {
-      // Gọi API đăng ký với vai trò admin (Quản trị viên)
+      // Đăng ký vai trò 'user' (Khách thân)
       await AuthAdminAPI.register({
         fullname: data.name,
         email: data.email,
+        phone: data.phone,
         password: data.password,
-        role: 'admin',
+        role: 'user',
       });
 
-      // Đăng ký xong tự động đăng nhập
+      // Tự động đăng nhập sau khi đăng ký
       await login(data.email, data.password);
-      navigate('/admin/dashboard');
+      navigate('/');
     } catch (err) {
       setServerError(err.message || 'Đăng ký thất bại. Email có thể đã tồn tại.');
     }
@@ -58,12 +60,12 @@ export default function RegisterPage() {
       {/* Background glow blobs */}
       <div style={{
         position: 'absolute', width: 400, height: 400,
-        background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
         top: '10%', left: '20%', pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', width: 350, height: 350,
-        background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)',
         bottom: '15%', right: '15%', pointerEvents: 'none',
       }} />
 
@@ -74,15 +76,15 @@ export default function RegisterPage() {
             width: 60, height: 60, borderRadius: 16, margin: '0 auto 16px',
             background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
+            boxShadow: '0 8px 24px rgba(99,102,241,0.3)',
           }}>
             <Store size={28} color="white" />
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text)', marginBottom: 6 }}>
-            Đăng ký Admin
+            Đăng ký khách hàng
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>
-            Tạo tài khoản quản trị viên mới
+            Tạo tài khoản để mua sắm phụ tùng ô tô chất lượng cao
           </p>
         </div>
 
@@ -102,12 +104,12 @@ export default function RegisterPage() {
                 <User size={13} style={{ display: 'inline', marginRight: 5 }} />
                 Họ và tên
               </label>
-              <div style={{ position: 'relative' }}>
+              <div>
                 <input
                   {...register('name')}
                   type="text"
                   className={`form-input ${errors.name ? 'error' : ''}`}
-                  placeholder="Quản trị viên"
+                  placeholder="Nguyễn Văn A"
                   style={{ paddingLeft: 14 }}
                 />
               </div>
@@ -120,16 +122,34 @@ export default function RegisterPage() {
                 <Mail size={13} style={{ display: 'inline', marginRight: 5 }} />
                 Email
               </label>
-              <div style={{ position: 'relative' }}>
+              <div>
                 <input
                   {...register('email')}
                   type="email"
                   className={`form-input ${errors.email ? 'error' : ''}`}
-                  placeholder="admin@example.com"
+                  placeholder="khachhang@example.com"
                   style={{ paddingLeft: 14 }}
                 />
               </div>
               {errors.email && <p className="form-error">{errors.email.message}</p>}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="form-label">
+                <Phone size={13} style={{ display: 'inline', marginRight: 5 }} />
+                Số điện thoại (tùy chọn)
+              </label>
+              <div>
+                <input
+                  {...register('phone')}
+                  type="text"
+                  className={`form-input ${errors.phone ? 'error' : ''}`}
+                  placeholder="09xxxxxxxx"
+                  style={{ paddingLeft: 14 }}
+                />
+              </div>
+              {errors.phone && <p className="form-error">{errors.phone.message}</p>}
             </div>
 
             {/* Password */}
@@ -201,7 +221,7 @@ export default function RegisterPage() {
                   <span className="spinner" style={{ width: 16, height: 16 }} />
                   Đang đăng ký...
                 </>
-              ) : 'Đăng ký'}
+              ) : 'Đăng ký tài khoản'}
             </button>
 
             <div style={{ textAlign: 'center', marginTop: 10 }}>
@@ -216,7 +236,7 @@ export default function RegisterPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--color-text-muted)' }}>
-          AutoParts Admin Panel · Chỉ dành cho quản trị viên
+          AutoParts Store · Mua sắm an toàn & tiện lợi
         </p>
       </div>
     </div>

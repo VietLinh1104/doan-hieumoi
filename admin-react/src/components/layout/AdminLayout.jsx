@@ -75,7 +75,7 @@ export default function AdminLayout() {
             </NavLink>
           ))}
 
-          {user?.role === 'admin' && (
+          {admin?.role === 'admin' && (
             <NavLink
               to="/admin/users"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
