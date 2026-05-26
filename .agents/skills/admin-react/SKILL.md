@@ -17,27 +17,44 @@ Bạn (Antigravity) sẽ đóng vai trò là chuyên gia Frontend sử dụng Re
 - **Data Fetching & State:** Admin apps yêu cầu tính đồng bộ hoá dữ liệu cao. Sử dụng React Query (TanStack Query) để gọi API, lưu cache, mutate dữ liệu và gán thẻ thời gian (stale time). Tránh lạm dụng Redux cho Server State.
 - **Bảo mật Frontend:** Các route phải được bọc trong một rào cản kiểm tra Token (Protected Routes). Xử lý tốt logic Refresh Token qua Axios Interceptors, và log-out người dùng khi Token hết hạn / bị từ chối 401.
 
-## 3. Danh sách API Endpoints Reference (Bảng Điều Khiển Admin)
-Base URL: `http://localhost:5000/api/v1`
-*Tâm niệm: Tất cả thao tác CRUD Admin đều BẮT BUỘC gắn header `Authorization: Bearer <ADMIN_TOKEN>` để server xác thực.*
+## 3. Quản Lý Theme & Giao Diện (Theme System)
+- **CSS Variables & Theme Switcher:** Ứng dụng hỗ trợ Sáng/Tối (Light/Dark mode) qua các CSS variables định nghĩa trong `index.css`. Mặc định hiển thị giao diện sáng (Light mode) với nền dịu mát và đổ bóng nhẹ.
+- **Theme Context:** File `ThemeContext.jsx` cung cấp hook `useTheme()` để chuyển đổi giữa `'light'` và `'dark'`, tự động đồng bộ lựa chọn của người dùng vào `localStorage` và cập nhật thuộc tính `data-theme` trên thẻ `html`.
+- **Theme Button:** Được đặt ở header (ShopLayout) và topbar (AdminLayout) để người dùng chuyển đổi tức thì.
 
-**👉 General Auth:**
-- `POST /auth/login`: Dùng để Quản trị viên đăng nhập vào hệ thống lấy Admin Token.
+## 4. Phân Quyền Vai Trò Ở Frontend (Role-based Frontend Access)
+- **ProtectedRoute:** Route quản trị được bảo vệ bằng cách kiểm tra:
+  - Nếu chưa đăng nhập: Điều hướng về `/admin/login`.
+  - Nếu vai trò không phải là `admin` hoặc `staff`: Điều hướng về `/` (trang Shop).
+- **Sidebar & Menu:** Menu "Người dùng" (`/admin/users`) chỉ hiển thị đối với người dùng có vai trò `admin`. Trả về thông báo lỗi "Truy cập bị từ chối" nếu `staff` cố tình truy cập.
+- **Ẩn nút Xóa dữ liệu:** Trong các trang quản lý sản phẩm, danh mục và đơn hàng, các nút Xóa vĩnh viễn bị ẩn hoàn toàn đối với vai trò `staff` để tránh thao tác sai lệch dữ liệu.
+- **Ẩn/Hiện Sản phẩm:** Biểu mẫu Sản phẩm hỗ trợ thuộc tính `is_hidden` (checkbox) để nhân viên ẩn sản phẩm khỏi Shop thay vì xóa.
 
-**👉 Quản lý Categories (Danh mục):**
-- `GET /categories`: Lấy danh sách danh mục phụ tùng để độ vào Table/Select List.
-- `POST /categories`: Thêm mới một danh mục (Yêu cầu body: `name`, `slug`, `image_url`, `description`).
-- `PUT /categories/:id`: Cập nhật thông tin danh mục tương ứng.
-- `DELETE /categories/:id`: Nhấn nút xoá bỏ vĩnh viễn danh mục ra khỏi hệ thống.
+## 5. Danh Sách API Endpoints Reference (adminClient)
+Base URL: `/api/v1` (tự động đính kèm Token trong header `Authorization: Bearer <TOKEN>` thông qua Axios Interceptors).
 
-**👉 Quản lý Products (Phụ tùng/Sản phẩm):**
-- `GET /products`: Xem danh sách tất cả mã phụ kiện (hỗ trợ tham số `page`, `limit`, `keyword` để lọc trên bảng).
-- `POST /products`: Đăng một phụ tùng mới lên sàn. (Body yêu cầu ít nhất: `name`, `price`, `category_id`).
-- `PUT /products/:id`: Cập nhật tồn kho (`stock`), thay đổi mô tả hoặc giá bán của mã hàng.
-- `DELETE /products/:id`: Xoá phụ tùng.
+👉 **General Auth & Users:**
+- `POST /auth/login`: Đăng nhập, nhận diện vai trò và điều hướng tương ứng (admin/staff vào trang quản trị, user vào Shop).
+- `POST /auth/register`: Đăng ký tài khoản (mặc định gán vai trò `user`).
+- `GET /auth/users`: Lấy danh sách toàn bộ người dùng (Quyền Admin).
+- `POST /auth/users`: Tạo tài khoản nhân sự mới (Quyền Admin).
+- `PUT /auth/users/:id/lock`: Khóa / Mở khóa tài khoản người dùng (Quyền Admin).
 
-**👉 Quản lý Đơn Hàng (Orders Admin View):**
-- `GET /orders`: Lấy toàn bộ đơn hàng của tất cả khách hàng về Dashboard.
-- `GET /orders/:id`: Nhấn xem chi tiết 1 order để biết họ đặt món gì.
-- `PUT /orders/:id/status`: Chuyển đổi trạng thái đơn (pending -> processing -> shipped -> delivered -> cancelled). Bạn truyền `{ "status": "shipped" }` trong body.
-- `DELETE /orders/:id`: Xoá bỏ/Huỷ hoàn toàn 1 đơn hàng (Quyền Admin).
+👉 **Quản lý Categories (Danh mục):**
+- `GET /categories`: Lấy danh sách tất cả danh mục.
+- `POST /categories`: Thêm mới danh mục (Yêu cầu Token Staff/Admin).
+- `PUT /categories/:id`: Cập nhật danh mục (Yêu cầu Token Staff/Admin).
+- `DELETE /categories/:id`: Xoá vĩnh viễn danh mục (Quyền Admin).
+
+👉 **Quản lý Products (Sản phẩm):**
+- `GET /products`: Xem danh sách tất cả sản phẩm (tự động ẩn sản phẩm có `is_hidden: true` đối với Guest/Customer).
+- `POST /products`: Đăng sản phẩm mới (Yêu cầu Token Staff/Admin).
+- `PUT /products/:id`: Cập nhật thông tin sản phẩm (Yêu cầu Token Staff/Admin).
+- `DELETE /products/:id`: Xoá vĩnh viễn sản phẩm (Quyền Admin).
+
+👉 **Quản lý Đơn Hàng (Orders):**
+- `GET /orders`: Lấy toàn bộ đơn hàng của tất cả khách hàng (Yêu cầu Token Staff/Admin).
+- `GET /orders/myorders`: Lấy danh sách đơn hàng cá nhân của Khách thân (Yêu cầu Token Customer).
+- `PUT /orders/:id/status`: Chuyển đổi trạng thái đơn (Yêu cầu Token Staff/Admin).
+- `PUT /orders/:id/cancel`: Khách hàng tự hủy đơn hàng đang chờ duyệt (Yêu cầu Token Customer).
+- `DELETE /orders/:id`: Xoá vĩnh viễn đơn hàng (Quyền Admin).
