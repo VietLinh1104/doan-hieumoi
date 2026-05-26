@@ -35,10 +35,11 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
     "fullname": "Họ tên người dùng (String, required)",
     "email": "Email đăng ký (String, required, unique)",
     "password": "Mật khẩu (String, required)",
-    "phone": "Số điện thoại (String, optional)"
+    "phone": "Số điện thoại (String, optional)",
+    "role": "Vai trò mong muốn (String: 'admin' | 'staff' | 'user', optional, default: 'user')"
   }
   ```
-- **Response:** Trả về `{ success: true, data: { id, fullname, email, role, token } }` (mặc định role là `'user'`).
+- **Response:** Trả về `{ success: true, data: { id, fullname, email, role, token } }` (vai trò mặc định là `'user'` nếu không truyền).
 
 #### 2. Đăng nhập (Login)
 - **Method:** `POST`

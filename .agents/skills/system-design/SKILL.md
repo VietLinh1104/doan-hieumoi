@@ -107,7 +107,7 @@ Admin --> UC_DeleteData
 ### 3.2. Bảng Đặc Tả Chi Tiết Các Use Case
 
 #### Nhóm 1: Khách lạ & Khách thân (Hệ thống Shop)
-- **UC_01: Đăng ký & Đăng nhập:** Cho phép người dùng tạo tài khoản Khách thân và đăng nhập. Sau khi đăng nhập, hệ thống ghi nhớ token và điều hướng về trang tương ứng với vai trò.
+- **UC_01: Đăng ký & Đăng nhập:** Cho phép người dùng tạo tài khoản mới và đăng nhập. Hệ thống tách biệt hoàn toàn giữa trang đăng ký dành cho Khách hàng (`/register` - đăng ký vai trò `user`) và trang đăng ký dành cho Quản trị viên (`/admin/register` - đăng ký vai trò `admin`). Sau khi đăng nhập, hệ thống ghi nhớ token và điều hướng về trang tương ứng với vai trò.
 - **UC_02: Tìm kiếm & Lọc sản phẩm:** Khách hàng tìm kiếm phụ tùng bằng tên hoặc mã OEM, lọc theo danh mục hoặc khoảng giá để tìm kiếm nhanh chóng.
 - **UC_03: Đặt hàng & Thanh toán:** Khách thân nhập thông tin giao hàng, kiểm tra giỏ hàng và tạo đơn hàng mới. Hệ thống sẽ tự động trừ số lượng sản phẩm tương ứng trong kho.
 - **UC_04: Xem lịch sử & Hủy đơn:** Khách thân theo dõi trạng thái đơn hàng (Chờ xác nhận, Đang giao, Đã giao, Đã hủy). Khách thân được phép hủy đơn hàng nếu đơn hàng đang ở trạng thái Chờ xác nhận (`pending`). Khi hủy thành công, số lượng tồn kho sản phẩm sẽ được tự động hoàn lại database.

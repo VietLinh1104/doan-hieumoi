@@ -29,13 +29,16 @@ Bạn (Antigravity) sẽ đóng vai trò là chuyên gia Frontend sử dụng Re
 - **Sidebar & Menu:** Menu "Người dùng" (`/admin/users`) chỉ hiển thị đối với người dùng có vai trò `admin`. Trả về thông báo lỗi "Truy cập bị từ chối" nếu `staff` cố tình truy cập.
 - **Ẩn nút Xóa dữ liệu:** Trong các trang quản lý sản phẩm, danh mục và đơn hàng, các nút Xóa vĩnh viễn bị ẩn hoàn toàn đối với vai trò `staff` để tránh thao tác sai lệch dữ liệu.
 - **Ẩn/Hiện Sản phẩm:** Biểu mẫu Sản phẩm hỗ trợ thuộc tính `is_hidden` (checkbox) để nhân viên ẩn sản phẩm khỏi Shop thay vì xóa.
+- **Tách Biệt Trang Đăng Ký (Separate Registration Pages):**
+  - **Trang đăng ký Khách hàng (`/register`):** Sử dụng `ShopRegisterPage.jsx` để tạo tài khoản mới với vai trò `user` (Khách thân), sau đó tự động đăng nhập và chuyển hướng người dùng về trang chủ mua sắm `/`.
+  - **Trang đăng ký Admin (`/admin/register`):** Sử dụng `RegisterPage.jsx` để tạo tài khoản mới với vai trò `admin`, sau đó tự động đăng nhập và chuyển hướng thẳng vào Bảng điều khiển quản trị `/admin/dashboard`.
 
 ## 5. Danh Sách API Endpoints Reference (adminClient)
 Base URL: `/api/v1` (tự động đính kèm Token trong header `Authorization: Bearer <TOKEN>` thông qua Axios Interceptors).
 
 👉 **General Auth & Users:**
 - `POST /auth/login`: Đăng nhập, nhận diện vai trò và điều hướng tương ứng (admin/staff vào trang quản trị, user vào Shop).
-- `POST /auth/register`: Đăng ký tài khoản (mặc định gán vai trò `user`).
+- `POST /auth/register`: Đăng ký tài khoản (hỗ trợ truyền `role` trong body để phân biệt đăng ký khách hàng `role: 'user'` tại `/register` và admin `role: 'admin'` tại `/admin/register`).
 - `GET /auth/users`: Lấy danh sách toàn bộ người dùng (Quyền Admin).
 - `POST /auth/users`: Tạo tài khoản nhân sự mới (Quyền Admin).
 - `PUT /auth/users/:id/lock`: Khóa / Mở khóa tài khoản người dùng (Quyền Admin).
