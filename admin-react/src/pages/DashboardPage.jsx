@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { ProductAdminAPI, OrderAdminAPI, CategoryAdminAPI } from '@/services/api';
+import { ProductAdminAPI, OrderAdminAPI, CategoryAdminAPI, AuthAdminAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, getOrderStatusClass, getOrderStatusLabel, formatDate } from '@/lib/utils';
-import { Package, ShoppingCart, Tag, TrendingUp, Clock, CheckCircle, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { Package, ShoppingCart, Tag, TrendingUp, Clock, CheckCircle, AlertCircle, ArrowUpRight, BarChart2, Star, Users } from 'lucide-react';
 
 function StatCard({ label, value, icon: Icon, color, sub }) {
   return (
@@ -31,6 +32,8 @@ function OrderStatusBadge({ status }) {
 }
 
 export default function DashboardPage() {
+  const { user: currentUser } = useAuth();
+
   const { data: products, isLoading: loadingProducts } = useQuery({
     queryKey: ['products', 'dashboard'],
     queryFn: () => ProductAdminAPI.getProducts({ limit: 100 }),
@@ -46,9 +49,16 @@ export default function DashboardPage() {
     queryFn: () => CategoryAdminAPI.getAll(),
   });
 
+  const { data: usersData } = useQuery({
+    queryKey: ['users', 'dashboard'],
+    queryFn: () => AuthAdminAPI.getUsers(),
+    enabled: currentUser?.role === 'admin',
+  });
+
   const productList = products?.data?.products || products?.products || (Array.isArray(products?.data) ? products?.data : (Array.isArray(products) ? products : []));
   const orderList = orders?.data?.orders || orders?.orders || (Array.isArray(orders?.data) ? orders?.data : (Array.isArray(orders) ? orders : []));
   const categoryList = categories?.data?.categories || categories?.categories || (Array.isArray(categories?.data) ? categories?.data : (Array.isArray(categories) ? categories : []));
+  const userList = usersData?.data || usersData || [];
 
   const totalRevenue = orderList
     .filter(o => o.status === 'delivered')
@@ -58,6 +68,52 @@ export default function DashboardPage() {
   const recentOrders = [...orderList]
     .sort((a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at))
     .slice(0, 8);
+
+  // Group revenue by last 6 months
+  const monthlyData = [];
+  const monthNames = ['Th 1', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'Th 8', 'Th 9', 'Th 10', 'Th 11', 'Th 12'];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const m = d.getMonth();
+    const y = d.getFullYear();
+    monthlyData.push({ month: m, year: y, label: `${monthNames[m]}`, value: 0 });
+  }
+
+  orderList.filter(o => o.status === 'delivered').forEach(order => {
+    const date = new Date(order.createdAt || order.created_at);
+    const m = date.getMonth();
+    const y = date.getFullYear();
+    const match = monthlyData.find(d => d.month === m && d.year === y);
+    if (match) {
+      match.value += (order.total_price || order.total_amount || 0);
+    }
+  });
+
+  const maxRevenue = Math.max(...monthlyData.map(d => d.value), 1);
+
+  // Best sellers
+  const productSales = {};
+  orderList.filter(o => o.status === 'delivered').forEach(order => {
+    const items = order.orderItems || order.items || [];
+    items.forEach(item => {
+      const pId = item.product_id?._id || item.product_id || item.id;
+      if (pId) {
+        if (!productSales[pId]) {
+          productSales[pId] = {
+            name: item.product_id?.name || item.name || 'Sản phẩm',
+            qty: 0,
+            revenue: 0
+          };
+        }
+        productSales[pId].qty += (item.quantity || 1);
+        productSales[pId].revenue += (item.quantity || 1) * (item.price_at_purchase || item.price || 0);
+      }
+    });
+  });
+  const bestSellersList = Object.values(productSales)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 5);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -180,6 +236,64 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Revenue Chart & Best Sellers */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+        {/* CSS Chart */}
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BarChart2 size={16} color="var(--color-primary)" />
+            Doanh thu 6 tháng gần nhất
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: 180, padding: '10px 0 20px', borderBottom: '1px solid var(--color-border)' }}>
+            {monthlyData.map((d, i) => {
+              const heightPct = Math.round((d.value / maxRevenue) * 100);
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primary)', opacity: d.value ? 1 : 0 }}>
+                    {d.value >= 1000000 ? `${(d.value / 1000000).toFixed(1)}M` : d.value > 0 ? `${Math.round(d.value / 1000)}k` : '0'}
+                  </div>
+                  <div style={{
+                    width: '45%',
+                    height: `${Math.max(heightPct, 3)}%`,
+                    minHeight: 4,
+                    background: 'linear-gradient(to top, var(--color-primary), var(--color-secondary))',
+                    borderRadius: '4px 4px 0 0',
+                    transition: 'height 0.5s ease',
+                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.15)'
+                  }} />
+                  <div style={{ fontSize: 12, color: 'var(--color-text-subtle)', fontWeight: 500 }}>
+                    {d.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Best sellers */}
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Star size={16} color="var(--color-warning)" fill="var(--color-warning)" />
+            Bán chạy nhất
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {bestSellersList.length === 0 ? (
+              <div style={{ color: 'var(--color-text-muted)', fontSize: 13, textAlign: 'center', padding: 20 }}>Chưa có doanh số bán hàng</div>
+            ) : bestSellersList.map((item, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: i < bestSellersList.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{formatCurrency(item.revenue)}</div>
+                </div>
+                <span className="badge badge-purple" style={{ flexShrink: 0 }}>
+                  Đã bán {item.qty}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Summary bottom row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Order status breakdown */}
@@ -244,6 +358,36 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Admin Account Statistics */}
+      {currentUser?.role === 'admin' && (
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Users size={16} color="var(--color-primary)" />
+            Báo cáo tài khoản & Nhân sự
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <div style={{ background: 'var(--color-surface-2)', padding: 16, borderRadius: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-text)' }}>
+                {userList.filter(u => u.role === 'admin').length}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>Quản trị viên</div>
+            </div>
+            <div style={{ background: 'var(--color-surface-2)', padding: 16, borderRadius: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-text)' }}>
+                {userList.filter(u => u.role === 'staff').length}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>Nhân viên vận hành</div>
+            </div>
+            <div style={{ background: 'var(--color-surface-2)', padding: 16, borderRadius: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-text)' }}>
+                {userList.filter(u => u.role === 'user').length}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>Khách hàng đăng ký</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

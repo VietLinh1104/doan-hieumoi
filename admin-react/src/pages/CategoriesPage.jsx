@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CategoryAdminAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { truncate } from '@/lib/utils';
 import { Plus, Pencil, Trash2, X, Tag, Image } from 'lucide-react';
 
@@ -165,6 +166,7 @@ function DeleteConfirm({ open, onClose, onConfirm, name, loading }) {
 
 export default function CategoriesPage() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -259,13 +261,15 @@ export default function CategoriesPage() {
                     >
                       <Pencil size={13} /> Sửa
                     </button>
-                    <button
-                      className="btn btn-danger btn-sm btn-icon"
-                      onClick={() => setDeleteTarget(cat)}
-                      title="Xoá danh mục"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {user?.role === 'admin' && (
+                      <button
+                        className="btn btn-danger btn-sm btn-icon"
+                        onClick={() => setDeleteTarget(cat)}
+                        title="Xoá danh mục"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

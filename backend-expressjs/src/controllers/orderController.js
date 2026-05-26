@@ -148,6 +148,47 @@ const deleteOrder = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Cancel order (Customer cancels their own order)
+// @route   PUT /api/v1/orders/:id/cancel
+// @access  Private
+const cancelOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error('Không tìm thấy đơn hàng');
+  }
+
+  if (order.user_id.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Bạn không có quyền huỷ đơn hàng này');
+  }
+
+  if (order.status !== 'pending') {
+    res.status(400);
+    throw new Error('Chỉ có thể huỷ đơn hàng khi ở trạng thái Chờ xác nhận!');
+  }
+
+  // Restore stock
+  const items = order.orderItems || [];
+  for (const item of items) {
+    if (item.product_id) {
+      await Product.findByIdAndUpdate(item.product_id, {
+        $inc: { stock: item.quantity }
+      });
+    }
+  }
+
+  order.status = 'cancelled';
+  await order.save();
+
+  res.json({
+    success: true,
+    message: 'Đã huỷ đơn hàng thành công',
+    data: order
+  });
+});
+
 module.exports = {
   getAllOrders,
   getMyOrders,
@@ -155,4 +196,5 @@ module.exports = {
   createOrder,
   updateOrderStatus,
   deleteOrder,
+  cancelOrder,
 };

@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import {
   LayoutDashboard, Package, Tag, ShoppingCart,
   LogOut, ChevronRight, Store, Settings, Bell,
-  Sun, Moon
+  Sun, Moon, User
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -74,6 +74,21 @@ export default function AdminLayout() {
               )}
             </NavLink>
           ))}
+
+          {user?.role === 'admin' && (
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            >
+              {({ isActive }) => (
+                <>
+                  <User size={16} />
+                  Người dùng
+                  {isActive && <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />}
+                </>
+              )}
+            </NavLink>
+          )}
           
           <div style={{ margin: '12px 0 4px', height: 1, background: 'var(--color-border)' }}></div>
           <NavLink 

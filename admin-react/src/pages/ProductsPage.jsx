@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ProductAdminAPI, CategoryAdminAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, truncate } from '@/lib/utils';
-import { Plus, Search, Pencil, Trash2, X, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, X, Package, ChevronLeft, ChevronRight, EyeOff } from 'lucide-react';
 
 const schema = z.object({
   name: z.string().min(2, 'Tên sản phẩm tối thiểu 2 ký tự'),
@@ -14,6 +15,7 @@ const schema = z.object({
   category_id: z.string().min(1, 'Chọn danh mục'),
   description: z.string().optional(),
   image_url: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+  is_hidden: z.boolean().optional(),
 });
 
 function ProductModal({ open, onClose, editing, categories }) {
@@ -22,7 +24,7 @@ function ProductModal({ open, onClose, editing, categories }) {
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { stock: 0, price: '', name: '', category_id: '', description: '', image_url: '' }
+    defaultValues: { stock: 0, price: '', name: '', category_id: '', description: '', image_url: '', is_hidden: false }
   });
 
   useEffect(() => {
@@ -35,6 +37,7 @@ function ProductModal({ open, onClose, editing, categories }) {
           category_id: editing.category_id || editing.category?._id || editing.category?.id || '',
           description: editing.description || '',
           image_url: editing.image_url || editing.imageUrl || '',
+          is_hidden: editing.is_hidden || false,
         });
       } else {
         reset({
@@ -44,6 +47,7 @@ function ProductModal({ open, onClose, editing, categories }) {
           category_id: '',
           description: '',
           image_url: '',
+          is_hidden: false,
         });
       }
     }
@@ -115,6 +119,18 @@ function ProductModal({ open, onClose, editing, categories }) {
               {errors.image_url && <p className="form-error">{errors.image_url.message}</p>}
             </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0 10px' }}>
+              <input 
+                type="checkbox" 
+                id="is_hidden" 
+                {...register('is_hidden')} 
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <label htmlFor="is_hidden" className="form-label" style={{ marginBottom: 0, cursor: 'pointer' }}>
+                Ẩn sản phẩm (Tạm ngừng bán sản phẩm này)
+              </label>
+            </div>
+
             <div>
               <label className="form-label">Mô tả</label>
               <textarea {...register('description')} className="form-input" placeholder="Mô tả chi tiết sản phẩm..." />
@@ -165,6 +181,7 @@ const PAGE_SIZE = 10;
 
 export default function ProductsPage() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
   const [search, setSearch] = useState('');
@@ -263,6 +280,7 @@ export default function ProductsPage() {
                     <th>Danh mục</th>
                     <th>Giá bán</th>
                     <th>Tồn kho</th>
+                    <th>Trạng thái</th>
                     <th style={{ width: 110 }}>Thao tác</th>
                   </tr>
                 </thead>
@@ -299,6 +317,17 @@ export default function ProductsPage() {
                           </span>
                         </td>
                         <td>
+                          {p.is_hidden ? (
+                            <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <EyeOff size={11} /> Đang ẩn
+                            </span>
+                          ) : (
+                            <span className="badge badge-success">
+                              Đang bán
+                            </span>
+                          )}
+                        </td>
+                        <td>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button
                               className="btn btn-ghost btn-icon btn-sm"
@@ -308,14 +337,16 @@ export default function ProductsPage() {
                             >
                               <Pencil size={15} />
                             </button>
-                            <button
-                              className="btn btn-ghost btn-icon btn-sm"
-                              onClick={() => setDeleteTarget(p)}
-                              title="Xoá"
-                              style={{ color: 'var(--color-danger)' }}
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {user?.role === 'admin' && (
+                              <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                onClick={() => setDeleteTarget(p)}
+                                title="Xoá"
+                                style={{ color: 'var(--color-danger)' }}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

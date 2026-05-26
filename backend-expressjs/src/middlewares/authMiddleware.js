@@ -10,11 +10,16 @@ const protect = asyncHandler(async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      const user = await User.findById(decoded.id).select('_id fullname email role');
+      const user = await User.findById(decoded.id).select('_id fullname email role is_locked');
       
       if (!user) {
           res.status(401);
           throw new Error('Not authorized, user not found');
+      }
+
+      if (user.is_locked) {
+          res.status(401);
+          throw new Error('Tài khoản của bạn đã bị khóa!');
       }
 
       req.user = user;
@@ -22,7 +27,7 @@ const protect = asyncHandler(async (req, res, next) => {
     } catch (error) {
       console.error(error);
       res.status(401);
-      throw new Error('Not authorized, token failed');
+      throw new Error(error.message || 'Not authorized, token failed');
     }
   }
 
@@ -37,8 +42,17 @@ const admin = (req, res, next) => {
     next();
   } else {
     res.status(403);
-    throw new Error('Not authorized as an admin');
+    throw new Error('Yêu cầu quyền Quản trị viên');
   }
 };
 
-module.exports = { protect, admin };
+const staffOrAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+    next();
+  } else {
+    res.status(403);
+    throw new Error('Yêu cầu quyền Nhân viên hoặc Quản trị viên');
+  }
+};
+
+module.exports = { protect, admin, staffOrAdmin };

@@ -33,12 +33,12 @@ export default function RegisterPage() {
   const onSubmit = async (data) => {
     setServerError('');
     try {
-      // Gọi API đăng ký với vai trò admin
+      // Gọi API đăng ký với vai trò user (Khách thân)
       await AuthAdminAPI.register({
         fullname: data.name,
         email: data.email,
         password: data.password,
-        role: 'admin',
+        role: 'user',
       });
 
       // Đăng ký xong tự động đăng nhập

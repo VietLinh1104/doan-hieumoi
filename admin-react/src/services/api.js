@@ -46,6 +46,9 @@ export const AuthAdminAPI = {
   login: (data) => adminClient.post('/auth/login', data),
   register: (data) => adminClient.post('/auth/register', data),
   getProfile: () => adminClient.get('/auth/profile'),
+  getUsers: () => adminClient.get('/auth/users'),
+  createUser: (data) => adminClient.post('/auth/users', data),
+  toggleUserLock: (id) => adminClient.put(`/auth/users/${id}/lock`),
 };
 
 // ─── Categories (/api/v1/categories) ─────────────────────────────────────────
@@ -74,6 +77,7 @@ export const OrderAdminAPI = {
   getById: (id) => adminClient.get(`/orders/${id}`),
   updateStatus: (id, status) => adminClient.put(`/orders/${id}/status`, { status }),
   delete: (id) => adminClient.delete(`/orders/${id}`),
+  cancel: (id) => adminClient.put(`/orders/${id}/cancel`),
 };
 
 export default adminClient;

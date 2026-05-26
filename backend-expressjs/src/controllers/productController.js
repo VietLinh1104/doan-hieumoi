@@ -12,6 +12,27 @@ const getProducts = asyncHandler(async (req, res) => {
 
   let query = {};
 
+  // Check if requester is staff or admin to show hidden products
+  let isStaffOrAdmin = false;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const User = require('../models/userModel');
+      const user = await User.findById(decoded.id);
+      if (user && (user.role === 'admin' || user.role === 'staff')) {
+        isStaffOrAdmin = true;
+      }
+    } catch (e) {
+      // Treat as guest
+    }
+  }
+
+  if (!isStaffOrAdmin) {
+    query.is_hidden = { $ne: true };
+  }
+
   if (req.query.keyword) {
     const kw = new RegExp(req.query.keyword, 'i');
     query.$or = [

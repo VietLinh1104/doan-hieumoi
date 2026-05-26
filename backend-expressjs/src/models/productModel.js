@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
     required: true
+  },
+  is_hidden: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

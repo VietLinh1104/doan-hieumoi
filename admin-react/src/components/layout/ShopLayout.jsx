@@ -1,12 +1,14 @@
 import { Outlet, Link } from 'react-router-dom';
-import { Store, ShoppingCart, User, Search, Sun, Moon } from 'lucide-react';
+import { Store, ShoppingCart, User, Search, Sun, Moon, LogOut } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import ShopCartSidebar from '@/components/shop/ShopCartSidebar';
 
 export default function ShopLayout() {
   const { cartCount, toggleSidebar } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { user, logout, isAuthenticated } = useAuth();
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--color-background)' }}>
@@ -49,9 +51,38 @@ export default function ShopLayout() {
 
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Link to="/admin/login" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
-              Dành cho Admin
-            </Link>
+            {isAuthenticated ? (
+              <>
+                {(user?.role === 'admin' || user?.role === 'staff') && (
+                  <Link to="/admin" style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>
+                    Trang Quản trị
+                  </Link>
+                )}
+                <Link to="/orders/history" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-subtle)', textDecoration: 'none' }}>
+                  Lịch sử mua hàng
+                </Link>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+                  Hi, {user.name?.split(' ')[0]}
+                </div>
+                <button 
+                  onClick={logout} 
+                  title="Đăng xuất"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', padding: 4 }}
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/admin/login" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
+                  Đăng nhập
+                </Link>
+                <Link to="/admin/register" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
+                  Đăng ký
+                </Link>
+              </>
+            )}
+
             <div style={{ width: 1, height: 24, background: 'var(--color-border)' }}></div>
             
             {/* Theme Toggle */}
@@ -64,9 +95,6 @@ export default function ShopLayout() {
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <button className="btn btn-ghost btn-icon">
-              <User size={20} />
-            </button>
             <button className="btn btn-primary" style={{ display: 'flex', gap: 8, borderRadius: 99, padding: '8px 16px', position: 'relative' }} onClick={toggleSidebar}>
               <ShoppingCart size={18} />
               <span style={{ fontWeight: 600 }}>Giỏ hàng</span>

@@ -26,8 +26,12 @@ export default function LoginPage() {
   const onSubmit = async (data) => {
     setServerError('');
     try {
-      await login(data.email, data.password);
-      navigate('/admin/dashboard');
+      const loggedInUser = await login(data.email, data.password);
+      if (loggedInUser?.role === 'admin' || loggedInUser?.role === 'staff') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setServerError(err.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');
     }

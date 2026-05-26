@@ -4,7 +4,7 @@ import { AuthAdminAPI } from '@/services/api';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [admin, setAdmin] = useState(() => {
+  const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem('admin_user');
       return stored ? JSON.parse(stored) : null;
@@ -17,31 +17,29 @@ export function AuthProvider({ children }) {
     const res = await AuthAdminAPI.login({ email, password });
     const responseData = res?.data || res;
     const token = responseData?.token || responseData?.accessToken;
-    const user = {
+    const userObj = {
       name: responseData?.fullname || responseData?.name || responseData?.email || email,
       email: responseData?.email || email,
-      role: responseData?.role || 'admin',
+      role: responseData?.role || 'user',
     };
     if (!token) throw new Error('Không nhận được token từ hệ thống');
-    if (user.role !== 'admin') {
-      throw new Error('Tài khoản không có quyền quản trị viên!');
-    }
+    
     localStorage.setItem('admin_token', token);
-    localStorage.setItem('admin_user', JSON.stringify(user));
-    setAdmin(user);
-    return user;
+    localStorage.setItem('admin_user', JSON.stringify(userObj));
+    setUser(userObj);
+    return userObj;
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
-    setAdmin(null);
+    setUser(null);
   }, []);
 
-  const isAuthenticated = Boolean(admin && localStorage.getItem('admin_token'));
+  const isAuthenticated = Boolean(user && localStorage.getItem('admin_token'));
 
   return (
-    <AuthContext.Provider value={{ admin, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ admin: user, user, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

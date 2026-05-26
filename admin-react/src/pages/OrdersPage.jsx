@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { OrderAdminAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, formatDate, getOrderStatusClass, getOrderStatusLabel, truncate } from '@/lib/utils';
 import { ShoppingCart, X, Eye, Trash2, ChevronDown, Package, User, MapPin, Phone } from 'lucide-react';
 
@@ -183,6 +184,7 @@ function DeleteConfirm({ open, onClose, onConfirm, orderId, loading }) {
 
 export default function OrdersPage() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [filterStatus, setFilterStatus] = useState('');
   const [detailOrder, setDetailOrder] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -347,14 +349,16 @@ export default function OrdersPage() {
                           >
                             <Eye size={15} />
                           </button>
-                          <button
-                            className="btn btn-ghost btn-icon btn-sm"
-                            onClick={() => setDeleteTarget(order)}
-                            title="Xoá đơn"
-                            style={{ color: 'var(--color-danger)' }}
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          {user?.role === 'admin' && (
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => setDeleteTarget(order)}
+                              title="Xoá đơn"
+                              style={{ color: 'var(--color-danger)' }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

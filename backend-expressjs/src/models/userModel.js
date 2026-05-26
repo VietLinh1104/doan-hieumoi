@@ -27,8 +27,12 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'user'],
+    enum: ['admin', 'staff', 'user'],
     default: 'user'
+  },
+  is_locked: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
