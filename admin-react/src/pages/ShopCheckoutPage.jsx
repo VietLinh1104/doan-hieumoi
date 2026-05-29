@@ -32,8 +32,8 @@ export default function ShopCheckoutPage() {
       const token = localStorage.getItem('admin_token');
       
       if (!token) {
-        alert('Vui lòng đăng nhập tài khoản (Admin/Nhân viên) để tiếp tục thanh toán.');
-        navigate('/admin/login');
+        alert('Vui lòng đăng nhập tài khoản để tiếp tục thanh toán.');
+        navigate('/login');
         return;
       }
 

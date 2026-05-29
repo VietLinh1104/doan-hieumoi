@@ -95,7 +95,7 @@ export default function ShopLayout() {
               </>
             ) : (
               <>
-                <Link to="/admin/login" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
+                <Link to="/login" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
                   Đăng nhập
                 </Link>
                 <Link to="/register" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-muted)', textDecoration: 'none' }}>

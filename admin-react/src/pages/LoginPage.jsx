@@ -12,7 +12,7 @@ const schema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, logout, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -21,7 +21,9 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
   });
 
-  if (isAuthenticated) return <Navigate to="/admin/dashboard" replace />;
+  if (isAuthenticated && (user?.role === 'admin' || user?.role === 'staff')) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   const onSubmit = async (data) => {
     setServerError('');
@@ -30,7 +32,8 @@ export default function LoginPage() {
       if (loggedInUser?.role === 'admin' || loggedInUser?.role === 'staff') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/');
+        logout();
+        setServerError('Tài khoản của bạn không có quyền truy cập trang quản trị!');
       }
     } catch (err) {
       setServerError(err.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');

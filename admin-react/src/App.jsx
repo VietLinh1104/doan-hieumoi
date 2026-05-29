@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import ShopRegisterPage from '@/pages/ShopRegisterPage';
+import ShopLoginPage from '@/pages/ShopLoginPage';
 import AdminLayout from '@/components/layout/AdminLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import ProductsPage from '@/pages/ProductsPage';
@@ -26,7 +27,7 @@ function ProtectedRoute({ children }) {
 
 function CustomerProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -52,6 +53,7 @@ export default function App() {
       {/* ─── ADMIN PANEL ─── */}
       <Route path="/admin/login" element={<LoginPage />} />
       <Route path="/admin/register" element={<RegisterPage />} />
+      <Route path="/login" element={<ShopLoginPage />} />
       <Route path="/register" element={<ShopRegisterPage />} />
       <Route
         path="/admin"

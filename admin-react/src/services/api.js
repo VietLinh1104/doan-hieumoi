@@ -25,12 +25,20 @@ adminClient.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     if (status === 401 || status === 403) {
-      // Token hết hạn hoặc người dùng không phải admin -> Force Logout ở đây
-      console.warn('Lỗi phân quyền truy cập Admin hoặc token đã hết hạn');
+      // Token hết hạn hoặc người dùng không có quyền -> Force Logout ở đây
+      console.warn('Lỗi phân quyền hoặc token đã hết hạn');
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
-      if (!window.location.pathname.includes('/admin/login') && !window.location.pathname.includes('/admin/register')) {
-        window.location.href = '/admin/login'; // Điều hướng về trang login
+      
+      const isPathAdmin = window.location.pathname.startsWith('/admin');
+      if (isPathAdmin) {
+        if (!window.location.pathname.includes('/admin/login') && !window.location.pathname.includes('/admin/register')) {
+          window.location.href = '/admin/login'; // Điều hướng về trang admin login
+        }
+      } else {
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+          window.location.href = '/login'; // Điều hướng về trang shop login
+        }
       }
     }
 
