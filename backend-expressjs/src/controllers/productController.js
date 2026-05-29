@@ -45,6 +45,16 @@ const getProducts = asyncHandler(async (req, res) => {
     query.category_id = req.query.category;
   }
 
+  if (req.query.priceRange) {
+    if (req.query.priceRange === 'low') {
+      query.price = { $lt: 500000 };
+    } else if (req.query.priceRange === 'mid') {
+      query.price = { $gte: 500000, $lte: 2000000 };
+    } else if (req.query.priceRange === 'high') {
+      query.price = { $gt: 2000000 };
+    }
+  }
+
   const count = await Product.countDocuments(query);
   const products = await Product.find(query)
     .populate('category_id', 'name')

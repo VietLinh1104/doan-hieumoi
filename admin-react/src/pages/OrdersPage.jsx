@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { OrderAdminAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, formatDate, getOrderStatusClass, getOrderStatusLabel, truncate } from '@/lib/utils';
-import { ShoppingCart, X, Eye, Trash2, ChevronDown, Package, User, MapPin, Phone } from 'lucide-react';
+import { ShoppingCart, X, Eye, Trash2, ChevronDown, Package, User, MapPin, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -189,35 +189,47 @@ export default function OrdersPage() {
   const [detailOrder, setDetailOrder] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Main paginated query
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => OrderAdminAPI.getAll(),
+    queryKey: ['orders', page, filterStatus],
+    queryFn: () => OrderAdminAPI.getAll({ page, limit: PAGE_SIZE, status: filterStatus }),
+  });
+
+  // Summary counts query (fetch all orders to calculate total counts for tabs)
+  const { data: allData } = useQuery({
+    queryKey: ['orders-all-counts'],
+    queryFn: () => OrderAdminAPI.getAll({ limit: 1000 }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => OrderAdminAPI.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['orders-all-counts'] });
       setDeleteTarget(null);
     },
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }) => OrderAdminAPI.updateStatus(id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['orders-all-counts'] });
+    },
   });
 
-  const orderList = data?.orders || data?.data || data || [];
-  const filtered = filterStatus
-    ? orderList.filter(o => o.status === filterStatus)
-    : orderList;
+  const orderList = data?.data?.orders || data?.orders || [];
+  const totalPages = data?.data?.pages || data?.pages || 1;
 
-  const sorted = [...filtered].sort(
-    (a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at)
-  );
+  const allOrderList = allData?.data?.orders || allData?.orders || [];
+  const totalAllCount = allData?.data?.total || allData?.total || allOrderList.length;
 
   const counts = ORDER_STATUSES.reduce((acc, s) => {
-    acc[s] = orderList.filter(o => o.status === s).length;
+    acc[s] = allOrderList.filter(o => o.status === s).length;
     return acc;
   }, {});
 
@@ -227,7 +239,7 @@ export default function OrdersPage() {
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700 }}>Quản lý Đơn hàng</h1>
         <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginTop: 4 }}>
-          {isLoading ? 'Đang tải...' : `${orderList.length} đơn hàng tổng cộng`}
+          {isLoading ? 'Đang tải...' : `${totalAllCount} đơn hàng tổng cộng`}
         </p>
       </div>
 
@@ -235,15 +247,15 @@ export default function OrdersPage() {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button
           className={`btn btn-sm ${!filterStatus ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setFilterStatus('')}
+          onClick={() => { setFilterStatus(''); setPage(1); }}
         >
-          Tất cả <span style={{ marginLeft: 4, opacity: 0.7 }}>({orderList.length})</span>
+          Tất cả <span style={{ marginLeft: 4, opacity: 0.7 }}>({allOrderList.length})</span>
         </button>
         {ORDER_STATUSES.map(s => (
           <button
             key={s}
             className={`btn btn-sm ${filterStatus === s ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setFilterStatus(s)}
+            onClick={() => { setFilterStatus(s); setPage(1); }}
           >
             {getOrderStatusLabel(s)}
             <span style={{ marginLeft: 4, opacity: 0.7 }}>({counts[s] || 0})</span>
@@ -263,7 +275,7 @@ export default function OrdersPage() {
             <ShoppingCart size={40} />
             <p>Lỗi tải dữ liệu</p>
           </div>
-        ) : sorted.length === 0 ? (
+        ) : orderList.length === 0 ? (
           <div className="empty-state">
             <ShoppingCart size={48} />
             <p style={{ fontWeight: 600, fontSize: 15 }}>
@@ -271,102 +283,129 @@ export default function OrdersPage() {
             </p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách hàng</th>
-                  <th>Sản phẩm</th>
-                  <th>Tổng tiền</th>
-                  <th>Trạng thái</th>
-                  <th>Đổi trạng thái</th>
-                  <th>Ngày đặt</th>
-                  <th style={{ width: 90 }}>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map(order => {
-                  const orderId = (order._id || order.id || '').toString();
-                  const items = order.orderItems || order.items || order.order_items || [];
-                  const total = order.total_price || order.total_amount || order.totalAmount || order.total || 0;
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Sản phẩm</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Đổi trạng thái</th>
+                    <th>Ngày đặt</th>
+                    <th style={{ width: 90 }}>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orderList.map(order => {
+                    const orderId = (order._id || order.id || '').toString();
+                    const items = order.orderItems || order.items || order.order_items || [];
+                    const total = order.total_price || order.total_amount || order.totalAmount || order.total || 0;
 
-                  let parsedAddress = {};
-                  if (order.shipping_address) {
-                    if (typeof order.shipping_address === 'object') {
-                      parsedAddress = order.shipping_address;
-                    } else {
-                      try {
-                        parsedAddress = JSON.parse(order.shipping_address);
-                      } catch (e) {
-                        parsedAddress = { address: order.shipping_address.toString() };
+                    let parsedAddress = {};
+                    if (order.shipping_address) {
+                      if (typeof order.shipping_address === 'object') {
+                        parsedAddress = order.shipping_address;
+                      } else {
+                        try {
+                          parsedAddress = JSON.parse(order.shipping_address);
+                        } catch (e) {
+                          parsedAddress = { address: order.shipping_address.toString() };
+                        }
                       }
                     }
-                  }
-                  const customer = parsedAddress.fullName || order.user_id?.fullname || order.user_id?.email || order.user?.name || order.user?.email || order.customerName || order.customer_name || '—';
+                    const customer = parsedAddress.fullName || order.user_id?.fullname || order.user_id?.email || order.user?.name || order.user?.email || order.customerName || order.customer_name || '—';
 
-                  return (
-                    <tr key={orderId} className="animate-fadeIn">
-                      <td style={{ fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'monospace', fontSize: 13 }}>
-                        #{orderId.slice(-8).toUpperCase()}
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 500, fontSize: 13 }}>{truncate(customer, 25)}</div>
-                      </td>
-                      <td style={{ color: 'var(--color-text-subtle)', fontSize: 13 }}>
-                        {items.length} sản phẩm
-                      </td>
-                      <td style={{ fontWeight: 700, color: 'var(--color-text)' }}>
-                        {formatCurrency(total)}
-                      </td>
-                      <td><StatusBadge status={order.status} /></td>
-                      <td>
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                          <select
-                            value={order.status}
-                            onChange={e => statusMutation.mutate({ id: orderId, status: e.target.value })}
-                            className="form-input"
-                            style={{ padding: '4px 28px 4px 10px', fontSize: 12, height: 30, cursor: 'pointer', appearance: 'none' }}
-                            disabled={statusMutation.isPending}
-                          >
-                            {ORDER_STATUSES.map(s => (
-                              <option key={s} value={s}>{getOrderStatusLabel(s)}</option>
-                            ))}
-                          </select>
-                          <ChevronDown size={12} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
-                        </div>
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--color-text-subtle)' }}>
-                        {formatDate(order.createdAt || order.created_at)}
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            className="btn btn-ghost btn-icon btn-sm"
-                            onClick={() => setDetailOrder(order)}
-                            title="Xem chi tiết"
-                            style={{ color: 'var(--color-accent)' }}
-                          >
-                            <Eye size={15} />
-                          </button>
-                          {user?.role === 'admin' && (
+                    return (
+                      <tr key={orderId} className="animate-fadeIn">
+                        <td style={{ fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'monospace', fontSize: 13 }}>
+                          #{orderId.slice(-8).toUpperCase()}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500, fontSize: 13 }}>{truncate(customer, 25)}</div>
+                        </td>
+                        <td style={{ color: 'var(--color-text-subtle)', fontSize: 13 }}>
+                          {items.length} sản phẩm
+                        </td>
+                        <td style={{ fontWeight: 700, color: 'var(--color-text)' }}>
+                          {formatCurrency(total)}
+                        </td>
+                        <td><StatusBadge status={order.status} /></td>
+                        <td>
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <select
+                              value={order.status}
+                              onChange={e => statusMutation.mutate({ id: orderId, status: e.target.value })}
+                              className="form-input"
+                              style={{ padding: '4px 28px 4px 10px', fontSize: 12, height: 30, cursor: 'pointer', appearance: 'none' }}
+                              disabled={statusMutation.isPending}
+                            >
+                              {ORDER_STATUSES.map(s => (
+                                <option key={s} value={s}>{getOrderStatusLabel(s)}</option>
+                              ))}
+                            </select>
+                            <ChevronDown size={12} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-text-muted)' }} />
+                          </div>
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--color-text-subtle)' }}>
+                          {formatDate(order.createdAt || order.created_at)}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 6 }}>
                             <button
                               className="btn btn-ghost btn-icon btn-sm"
-                              onClick={() => setDeleteTarget(order)}
-                              title="Xoá đơn"
-                              style={{ color: 'var(--color-danger)' }}
+                              onClick={() => setDetailOrder(order)}
+                              title="Xem chi tiết"
+                              style={{ color: 'var(--color-accent)' }}
                             >
-                              <Trash2 size={15} />
+                              <Eye size={15} />
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            {user?.role === 'admin' && (
+                              <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                onClick={() => setDeleteTarget(order)}
+                                title="Xoá đơn"
+                                style={{ color: 'var(--color-danger)' }}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--color-border)' }}>
+                <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+                  Trang {page} / {totalPages}
+                </span>
+                <div className="pagination">
+                  <button className="page-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                    <ChevronLeft size={14} />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => {
+                    const p = i + 1;
+                    return (
+                      <button key={p} className={`page-btn ${page === p ? 'active' : ''}`} onClick={() => setPage(p)}>
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <button className="page-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

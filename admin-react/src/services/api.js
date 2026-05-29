@@ -72,8 +72,8 @@ export const ProductAdminAPI = {
 
 // ─── Orders (/api/v1/orders) ──────────────────────────────────────────────────
 export const OrderAdminAPI = {
-  getAll: () => adminClient.get('/orders'),
-  getMyOrders: () => adminClient.get('/orders/myorders'),
+  getAll: (params = {}) => adminClient.get('/orders', { params }),
+  getMyOrders: (params = {}) => adminClient.get('/orders/myorders', { params }),
   getById: (id) => adminClient.get(`/orders/${id}`),
   updateStatus: (id, status) => adminClient.put(`/orders/${id}/status`, { status }),
   delete: (id) => adminClient.delete(`/orders/${id}`),

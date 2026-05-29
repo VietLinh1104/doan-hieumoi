@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { formatCurrency } from '@/lib/utils';
-import { Search, Filter, ShoppingCart, Star } from 'lucide-react';
+import { Search, Filter, ShoppingCart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 
 export default function ShopHomePage() {
@@ -15,6 +15,17 @@ export default function ShopHomePage() {
   const { addToCart } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const PAGE_SIZE = 8;
+
+  // Reset page to 1 when filters or search change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, selectedPriceRange, keyword]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -34,15 +45,21 @@ export default function ShopHomePage() {
       setLoading(true);
       try {
         const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api/v1';
-        let url = `${baseURL}/products?limit=100`;
+        let url = `${baseURL}/products?limit=${PAGE_SIZE}&page=${page}`;
         if (selectedCategory) {
           url += `&category=${selectedCategory}`;
         }
         if (keyword) {
           url += `&keyword=${encodeURIComponent(keyword)}`;
         }
+        if (selectedPriceRange !== 'all') {
+          url += `&priceRange=${selectedPriceRange}`;
+        }
         const prodRes = await axios.get(url);
-        setProducts(prodRes.data?.data?.products || prodRes.data?.products || prodRes.data?.data || []);
+        const resData = prodRes.data?.data || {};
+        setProducts(resData.products || []);
+        setTotalProducts(resData.total || 0);
+        setTotalPages(resData.pages || 1);
       } catch (err) {
         console.error('Failed to fetch products', err);
       } finally {
@@ -50,20 +67,9 @@ export default function ShopHomePage() {
       }
     };
     fetchProducts();
-  }, [selectedCategory, keyword]);
+  }, [selectedCategory, keyword, selectedPriceRange, page]);
 
-  const filteredProducts = products.filter(product => {
-    if (selectedPriceRange === 'low') {
-      return product.price < 500000;
-    }
-    if (selectedPriceRange === 'mid') {
-      return product.price >= 500000 && product.price <= 2000000;
-    }
-    if (selectedPriceRange === 'high') {
-      return product.price > 2000000;
-    }
-    return true; // 'all'
-  });
+  const filteredProducts = products;
 
   return (
     <div className="animate-fadeIn">
@@ -182,7 +188,7 @@ export default function ShopHomePage() {
               )}
             </div>
             <div style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
-              Hiển thị {filteredProducts.length} sản phẩm
+              Tổng số: {totalProducts} sản phẩm
             </div>
           </div>
 
@@ -213,47 +219,86 @@ export default function ShopHomePage() {
               )}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
-              {filteredProducts.slice(0, 12).map(product => (
-                <div key={product._id} className="card" onClick={() => navigate(`/product/${product._id}`)} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'transform 0.2s', ':hover': { transform: 'translateY(-4px)' } }}>
-                  <div style={{ height: 180, background: 'var(--color-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {product.main_image ? (
-                      <img src={product.main_image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <Search size={40} style={{ opacity: 0.1 }} />
-                    )}
-                  </div>
-                  <div style={{ padding: 16, display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <div style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 600, marginBottom: 4 }}>
-                      {product.part_number}
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+                {filteredProducts.map(product => (
+                  <div key={product._id} className="card" onClick={() => navigate(`/product/${product._id}`)} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'transform 0.2s', ':hover': { transform: 'translateY(-4px)' } }}>
+                    <div style={{ height: 180, background: 'var(--color-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {product.main_image ? (
+                        <img src={product.main_image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Search size={40} style={{ opacity: 0.1 }} />
+                      )}
                     </div>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, marginBottom: 8, color: 'var(--color-text)' }}>
-                      {product.name}
-                    </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 12 }}>
-                      <Star size={14} color="#FBBF24" fill="#FBBF24" />
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>4.8</span>
-                      <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>(124)</span>
-                    </div>
-                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text)' }}>
-                        {formatCurrency(product.price)}
+                    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <div style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 600, marginBottom: 4 }}>
+                        {product.part_number}
                       </div>
-                      <button
-                        className="btn btn-primary btn-icon"
-                        style={{ borderRadius: '50%', width: 36, height: 36 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(product);
-                        }}
-                      >
-                        <ShoppingCart size={16} />
-                      </button>
+                      <h3 style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, marginBottom: 8, color: 'var(--color-text)' }}>
+                        {product.name}
+                      </h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 12 }}>
+                        <Star size={14} color="#FBBF24" fill="#FBBF24" />
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>4.8</span>
+                        <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>(124)</span>
+                      </div>
+                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text)' }}>
+                          {formatCurrency(product.price)}
+                        </div>
+                        <button
+                          className="btn btn-primary btn-icon"
+                          style={{ borderRadius: '50%', width: 36, height: 36 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(product);
+                          }}
+                        >
+                          <ShoppingCart size={16} />
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--color-border)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+                    Trang {page} / {totalPages}
+                  </span>
+                  <div className="pagination">
+                    <button 
+                      className="page-btn" 
+                      disabled={page <= 1} 
+                      onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => {
+                      const p = i + 1;
+                      return (
+                        <button 
+                          key={p} 
+                          className={`page-btn ${page === p ? 'active' : ''}`} 
+                          onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    <button 
+                      className="page-btn" 
+                      disabled={page >= totalPages} 
+                      onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      <ChevronRight size={14} />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>

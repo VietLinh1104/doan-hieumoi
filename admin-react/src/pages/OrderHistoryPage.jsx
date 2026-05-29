@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { OrderAdminAPI } from '@/services/api';
 import { formatCurrency, formatDate, getOrderStatusClass, getOrderStatusLabel } from '@/lib/utils';
-import { ShoppingBag, X, Calendar, DollarSign, Eye, Package } from 'lucide-react';
+import { ShoppingBag, X, Calendar, DollarSign, Eye, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 function OrderHistoryDetailModal({ open, onClose, order }) {
@@ -77,9 +77,13 @@ export default function OrderHistoryPage() {
   const qc = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 5;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['my-orders'],
-    queryFn: () => OrderAdminAPI.getMyOrders(),
+    queryKey: ['my-orders', page],
+    queryFn: () => OrderAdminAPI.getMyOrders({ page, limit: PAGE_SIZE }),
   });
 
   const cancelMutation = useMutation({
@@ -89,7 +93,8 @@ export default function OrderHistoryPage() {
     },
   });
 
-  const orders = data?.data || data || [];
+  const orders = data?.data?.orders || data?.orders || [];
+  const totalPages = data?.data?.pages || data?.pages || 1;
 
   return (
     <div className="animate-fadeIn" style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -185,6 +190,43 @@ export default function OrderHistoryPage() {
               </div>
             );
           })}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--color-border)' }}>
+              <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+                Trang {page} / {totalPages}
+              </span>
+              <div className="pagination">
+                <button 
+                  className="page-btn" 
+                  disabled={page <= 1} 
+                  onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => {
+                  const p = i + 1;
+                  return (
+                    <button 
+                      key={p} 
+                      className={`page-btn ${page === p ? 'active' : ''}`} 
+                      onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+                <button 
+                  className="page-btn" 
+                  disabled={page >= totalPages} 
+                  onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
