@@ -106,8 +106,20 @@ const createProduct = asyncHandler(async (req, res) => {
 
   const slug = req.body.slug || slugify(name);
 
-  // Tạo sản phẩm mới kèm theo slug
-  const product = await Product.create({ name, price, category_id, slug, ...rest });
+  // Đồng bộ hai trường ảnh
+  const img = req.body.image_url || req.body.main_image || '';
+  const productData = { 
+    name, 
+    price, 
+    category_id, 
+    slug, 
+    ...rest, 
+    main_image: img, 
+    image_url: img 
+  };
+
+  // Tạo sản phẩm mới kèm theo slug và ảnh
+  const product = await Product.create(productData);
   const populatedProduct = await Product.findById(product._id).populate('category_id', 'name');
 
   res.status(201).json({
@@ -130,6 +142,13 @@ const updateProduct = asyncHandler(async (req, res) => {
   const bodyData = { ...req.body };
   if (bodyData.name && !bodyData.slug) {
     bodyData.slug = slugify(bodyData.name);
+  }
+
+  // Đồng bộ hai trường ảnh khi cập nhật
+  if (bodyData.image_url !== undefined || bodyData.main_image !== undefined) {
+    const img = bodyData.image_url || bodyData.main_image || '';
+    bodyData.image_url = img;
+    bodyData.main_image = img;
   }
 
   const updatedProduct = await Product.findByIdAndUpdate(

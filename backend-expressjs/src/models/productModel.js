@@ -36,6 +36,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     maxLength: 255
   },
+  image_url: {
+    type: String,
+    maxLength: 255
+  },
   category_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',

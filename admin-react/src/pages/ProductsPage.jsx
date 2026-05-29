@@ -36,7 +36,7 @@ function ProductModal({ open, onClose, editing, categories }) {
           stock: editing.stock ?? editing.quantity ?? 0,
           category_id: editing.category_id || editing.category?._id || editing.category?.id || '',
           description: editing.description || '',
-          image_url: editing.image_url || editing.imageUrl || '',
+          image_url: editing.main_image || editing.image_url || editing.imageUrl || '',
           is_hidden: editing.is_hidden || false,
         });
       } else {
@@ -286,7 +286,7 @@ export default function ProductsPage() {
                 </thead>
                 <tbody>
                   {productList.map(p => {
-                    const imgSrc = p.image_url || p.imageUrl || p.image;
+                    const imgSrc = p.main_image || p.image_url || p.imageUrl || p.image;
                     const stock = p.stock ?? p.quantity ?? 0;
                     return (
                       <tr key={p._id || p.id} className="animate-fadeIn">

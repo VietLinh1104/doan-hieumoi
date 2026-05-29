@@ -69,8 +69,16 @@ export default function ShopProductDetailPage() {
 
       <div style={{ display: 'flex', gap: 40, marginBottom: 48, flexWrap: 'wrap' }}>
         {/* Product Image */}
-        <div style={{ flex: '1 1 400px', background: 'var(--color-surface-2)', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-          <Package size={100} style={{ opacity: 0.1 }} />
+        <div style={{ flex: '1 1 400px', background: 'var(--color-surface-2)', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400, overflow: 'hidden' }}>
+          {product.main_image || product.image_url ? (
+            <img 
+              src={product.main_image || product.image_url} 
+              alt={product.name} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 24 }} 
+            />
+          ) : (
+            <Package size={100} style={{ opacity: 0.1 }} />
+          )}
         </div>
 
         {/* Product Info */}
