@@ -1,4 +1,5 @@
-import { Outlet, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Store, ShoppingCart, User, Search, Sun, Moon, LogOut } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -9,6 +10,21 @@ export default function ShopLayout() {
   const { cartCount, toggleSidebar } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { user, logout, isAuthenticated } = useAuth();
+
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const keywordParam = searchParams.get('keyword') || '';
+  const [searchValue, setSearchValue] = useState(keywordParam);
+
+  // Sync state if URL changes (e.g. search cleared from homepage)
+  useEffect(() => {
+    setSearchValue(keywordParam);
+  }, [keywordParam]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    navigate(`/?keyword=${encodeURIComponent(searchValue.trim())}`);
+  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--color-background)' }}>
@@ -39,15 +55,20 @@ export default function ShopLayout() {
           </Link>
 
           {/* Search Bar */}
-          <div style={{ flex: 1, maxWidth: 400, margin: '0 24px', position: 'relative' }}>
+          <form 
+            onSubmit={handleSearchSubmit}
+            style={{ flex: 1, maxWidth: 400, margin: '0 24px', position: 'relative' }}
+          >
             <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
             <input 
               type="text" 
               placeholder="Tìm kiếm phụ tùng, mã OEM..." 
               className="form-input"
-              style={{ paddingLeft: 40, borderRadius: 99, background: 'var(--color-surface-2)', border: 'none' }}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              style={{ paddingLeft: 40, borderRadius: 99, background: 'var(--color-surface-2)', border: 'none', width: '100%' }}
             />
-          </div>
+          </form>
 
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

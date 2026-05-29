@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { formatCurrency } from '@/lib/utils';
 import { Search, Filter, ShoppingCart, Star } from 'lucide-react';
@@ -13,6 +13,8 @@ export default function ShopHomePage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const keyword = searchParams.get('keyword') || '';
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -36,6 +38,9 @@ export default function ShopHomePage() {
         if (selectedCategory) {
           url += `&category=${selectedCategory}`;
         }
+        if (keyword) {
+          url += `&keyword=${encodeURIComponent(keyword)}`;
+        }
         const prodRes = await axios.get(url);
         setProducts(prodRes.data?.data?.products || prodRes.data?.products || prodRes.data?.data || []);
       } catch (err) {
@@ -45,7 +50,7 @@ export default function ShopHomePage() {
       }
     };
     fetchProducts();
-  }, [selectedCategory]);
+  }, [selectedCategory, keyword]);
 
   const filteredProducts = products.filter(product => {
     if (selectedPriceRange === 'low') {
@@ -153,8 +158,29 @@ export default function ShopHomePage() {
 
         {/* Product Grid */}
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700 }}>Sản phẩm nổi bật</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              {keyword ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 700 }}>
+                    Kết quả tìm kiếm cho: <span style={{ color: 'var(--color-primary)' }}>"{keyword}"</span>
+                  </h2>
+                  <button 
+                    onClick={() => {
+                      const params = new URLSearchParams(searchParams);
+                      params.delete('keyword');
+                      setSearchParams(params);
+                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px 10px', fontSize: 12, borderRadius: 99, background: 'var(--color-surface-2)', display: 'flex', alignItems: 'center', gap: 4 }}
+                  >
+                    Xóa tìm kiếm
+                  </button>
+                </div>
+              ) : (
+                <h2 style={{ fontSize: 20, fontWeight: 700 }}>Sản phẩm nổi bật</h2>
+              )}
+            </div>
             <div style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
               Hiển thị {filteredProducts.length} sản phẩm
             </div>
@@ -165,8 +191,26 @@ export default function ShopHomePage() {
               <div className="spinner"></div>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-text-muted)' }}>
-              Không tìm thấy phụ tùng phù hợp với tiêu chí lọc.
+            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+              <Search size={48} style={{ opacity: 0.2, marginBottom: 8 }} />
+              <p style={{ fontSize: 16, fontWeight: 500 }}>
+                Không tìm thấy phụ tùng nào phù hợp với bộ lọc hoặc từ khóa.
+              </p>
+              {(keyword || selectedCategory || selectedPriceRange !== 'all') && (
+                <button 
+                  onClick={() => {
+                    setSelectedCategory('');
+                    setSelectedPriceRange('all');
+                    const params = new URLSearchParams(searchParams);
+                    params.delete('keyword');
+                    setSearchParams(params);
+                  }}
+                  className="btn btn-primary btn-sm"
+                  style={{ borderRadius: 99 }}
+                >
+                  Xóa bộ lọc & Tìm kiếm
+                </button>
+              )}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
