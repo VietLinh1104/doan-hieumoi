@@ -25,10 +25,17 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
 
 ### 🔑 Authentication & Users (`/api/v1/auth`)
 
-#### 1. Đăng ký tài khoản (Register)
+#### 1. Kiểm tra trạng thái thiết lập hệ thống (Setup Status)
+- **Method:** `GET`
+- **URL:** `/auth/setup-status`
+- **Quyền truy cập:** Public (Bất kỳ ai)
+- **Response:** Trả về `{ success: true, data: { isSetup: true | false } }` (trả về `isSetup: true` nếu đã tồn tại ít nhất một tài khoản `admin` hoặc `staff` trong database).
+
+#### 2. Đăng ký tài khoản (Register)
 - **Method:** `POST`
 - **URL:** `/auth/register`
 - **Quyền truy cập:** Public (Bất kỳ ai)
+- **Đặc trưng:** Chặn đăng ký vai trò `admin` hoặc `staff` nếu hệ thống đã có tài khoản Quản trị viên/Nhân viên trong database.
 - **Request Body:**
   ```json
   {
@@ -145,6 +152,7 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
   - `limit`: Số lượng/trang (Number, default: 12)
   - `keyword`: Từ khóa tìm kiếm theo tên hoặc mã OEM (String, optional)
   - `category`: Lọc theo ID danh mục (String, optional)
+  - `priceRange`: Lọc theo khoảng giá (low: dưới 500k | mid: 500k-2M | high: trên 2M, optional)
 - **Response:** Trả về `{ success: true, data: { products: [...], page, pages, total } }`.
 - **Đặc trưng:** Nếu người dùng là Guest/Customer, tự động ẩn sản phẩm có `is_hidden === true`. Nếu là Staff/Admin (gửi kèm Token hợp lệ), hiển thị đầy đủ.
 
@@ -158,6 +166,7 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
 - **Method:** `POST`
 - **URL:** `/products`
 - **Quyền truy cập:** Private Staff/Admin
+- **Đặc trưng:** Tự động đồng bộ hóa liên kết hình ảnh giữa 2 trường `main_image` và `image_url`.
 - **Request Body:**
   ```json
   {
@@ -168,6 +177,7 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
     "stock": "Tồn kho ban đầu (Number, default: 0)",
     "description": "Mô tả sản phẩm (String, optional)",
     "image_url": "Link ảnh sản phẩm (String, optional)",
+    "main_image": "Link ảnh chính sản phẩm (String, optional)",
     "is_hidden": "Ẩn khỏi Shop (Boolean, default: false)"
   }
   ```
@@ -176,6 +186,7 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
 - **Method:** `PUT`
 - **URL:** `/products/:id`
 - **Quyền truy cập:** Private Staff/Admin
+- **Đặc trưng:** Tự động đồng bộ hóa liên kết hình ảnh giữa 2 trường `main_image` và `image_url`.
 - **Request Body:** Các trường sản phẩm cần sửa.
 
 #### 5. Xóa sản phẩm (Admin only)
@@ -187,15 +198,24 @@ Tất cả các API endpoints của hệ thống đều có base URL là `/api/v
 
 ### 🛒 Đơn Hàng (`/api/v1/orders`)
 
-#### 1. Xem danh sách tất cả đơn hàng
+#### 1. Xem danh sách tất cả đơn hàng (có phân trang)
 - **Method:** `GET`
 - **URL:** `/orders`
 - **Quyền truy cập:** Private Staff/Admin (Xem tất cả đơn của hệ thống)
+- **Query Parameters:**
+  - `page`: Số trang (Number, default: 1)
+  - `limit`: Số lượng/trang (Number, default: 10)
+  - `status`: Lọc theo trạng thái đơn hàng (String, optional)
+- **Response:** Trả về `{ success: true, data: { orders: [...], page, pages, total } }`.
 
-#### 2. Xem danh sách đơn hàng cá nhân (My Orders)
+#### 2. Xem danh sách đơn hàng cá nhân (My Orders - có phân trang)
 - **Method:** `GET`
 - **URL:** `/orders/myorders`
 - **Quyền truy cập:** Private Customer (Xem đơn của chính mình đăng nhập)
+- **Query Parameters:**
+  - `page`: Số trang (Number, default: 1)
+  - `limit`: Số lượng/trang (Number, default: 10)
+- **Response:** Trả về `{ success: true, data: { orders: [...], page, pages, total } }`.
 
 #### 3. Xem chi tiết đơn hàng
 - **Method:** `GET`

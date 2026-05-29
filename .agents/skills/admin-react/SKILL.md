@@ -31,12 +31,13 @@ Bạn (Antigravity) sẽ đóng vai trò là chuyên gia Frontend sử dụng Re
 - **Ẩn/Hiện Sản phẩm:** Biểu mẫu Sản phẩm hỗ trợ thuộc tính `is_hidden` (checkbox) để nhân viên ẩn sản phẩm khỏi Shop thay vì xóa.
 - **Tách Biệt Trang Đăng Ký (Separate Registration Pages):**
   - **Trang đăng ký Khách hàng (`/register`):** Sử dụng `ShopRegisterPage.jsx` để tạo tài khoản mới với vai trò `user` (Khách thân), sau đó tự động đăng nhập và chuyển hướng người dùng về trang chủ mua sắm `/`.
-  - **Trang đăng ký Admin (`/admin/register`):** Sử dụng `RegisterPage.jsx` để tạo tài khoản mới với vai trò `admin`, sau đó tự động đăng nhập và chuyển hướng thẳng vào Bảng điều khiển quản trị `/admin/dashboard`.
+  - **Trang đăng ký Admin (`/admin/register`):** Sử dụng `RegisterPage.jsx` để tạo tài khoản mới với vai trò `admin`. Trang này chỉ hoạt động khi hệ thống chưa được thiết lập tài khoản quản trị/nhân viên nào (`setup-status` trả về `isSetup: false`). Nếu đã có tài khoản thiết lập, trang sẽ tự động chuyển hướng người dùng về trang `/admin/login`.
 
 ## 5. Danh Sách API Endpoints Reference (adminClient)
 Base URL: `/api/v1` (tự động đính kèm Token trong header `Authorization: Bearer <TOKEN>` thông qua Axios Interceptors).
 
 👉 **General Auth & Users:**
+- `GET /auth/setup-status`: Lấy trạng thái thiết lập hệ thống (Public - trả về `isSetup: true` nếu đã có tài khoản admin/staff).
 - `POST /auth/login`: Đăng nhập, nhận diện vai trò và điều hướng tương ứng (admin/staff vào trang quản trị, user vào Shop).
 - `POST /auth/register`: Đăng ký tài khoản (hỗ trợ truyền `role` trong body để phân biệt đăng ký khách hàng `role: 'user'` tại `/register` và admin `role: 'admin'` tại `/admin/register`).
 - `GET /auth/users`: Lấy danh sách toàn bộ người dùng (Quyền Admin).
@@ -50,14 +51,14 @@ Base URL: `/api/v1` (tự động đính kèm Token trong header `Authorization:
 - `DELETE /categories/:id`: Xoá vĩnh viễn danh mục (Quyền Admin).
 
 👉 **Quản lý Products (Sản phẩm):**
-- `GET /products`: Xem danh sách tất cả sản phẩm (tự động ẩn sản phẩm có `is_hidden: true` đối với Guest/Customer).
-- `POST /products`: Đăng sản phẩm mới (Yêu cầu Token Staff/Admin).
-- `PUT /products/:id`: Cập nhật thông tin sản phẩm (Yêu cầu Token Staff/Admin).
+- `GET /products`: Xem danh sách sản phẩm hỗ trợ lọc và phân trang (truyền các params: `page`, `limit`, `keyword`, `category`, `priceRange`).
+- `POST /products`: Đăng sản phẩm mới (Yêu cầu Token Staff/Admin, tự động đồng bộ `main_image` và `image_url`).
+- `PUT /products/:id`: Cập nhật thông tin sản phẩm (Yêu cầu Token Staff/Admin, tự động đồng bộ `main_image` và `image_url`).
 - `DELETE /products/:id`: Xoá vĩnh viễn sản phẩm (Quyền Admin).
 
 👉 **Quản lý Đơn Hàng (Orders):**
-- `GET /orders`: Lấy toàn bộ đơn hàng của tất cả khách hàng (Yêu cầu Token Staff/Admin).
-- `GET /orders/myorders`: Lấy danh sách đơn hàng cá nhân của Khách thân (Yêu cầu Token Customer).
+- `GET /orders`: Lấy danh sách đơn hàng hỗ trợ lọc và phân trang (truyền các params: `page`, `limit`, `status`).
+- `GET /orders/myorders`: Lấy danh sách đơn hàng cá nhân của Khách thân hỗ trợ phân trang (truyền các params: `page`, `limit`).
 - `PUT /orders/:id/status`: Chuyển đổi trạng thái đơn (Yêu cầu Token Staff/Admin).
 - `PUT /orders/:id/cancel`: Khách hàng tự hủy đơn hàng đang chờ duyệt (Yêu cầu Token Customer).
 - `DELETE /orders/:id`: Xoá vĩnh viễn đơn hàng (Quyền Admin).

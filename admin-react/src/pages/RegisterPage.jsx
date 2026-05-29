@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,11 +24,41 @@ export default function RegisterPage() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
+  // System setup state
+  const [checkingSetup, setCheckingSetup] = useState(true);
+  const [isSetup, setIsSetup] = useState(false);
+
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const res = await AuthAdminAPI.getSetupStatus();
+        setIsSetup(res.data?.isSetup || false);
+      } catch (err) {
+        console.error('Failed to check system setup status', err);
+      } finally {
+        setCheckingSetup(false);
+      }
+    };
+    checkSetup();
+  }, []);
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
   });
 
   if (isAuthenticated) return <Navigate to="/admin/dashboard" replace />;
+
+  if (checkingSetup) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  if (isSetup) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   const onSubmit = async (data) => {
     setServerError('');

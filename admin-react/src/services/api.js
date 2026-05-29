@@ -49,6 +49,7 @@ export const AuthAdminAPI = {
   getUsers: () => adminClient.get('/auth/users'),
   createUser: (data) => adminClient.post('/auth/users', data),
   toggleUserLock: (id) => adminClient.put(`/auth/users/${id}/lock`),
+  getSetupStatus: () => adminClient.get('/auth/setup-status'),
 };
 
 // ─── Categories (/api/v1/categories) ─────────────────────────────────────────

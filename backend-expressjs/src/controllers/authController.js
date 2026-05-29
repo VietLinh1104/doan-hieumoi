@@ -44,6 +44,15 @@ const authUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, email, password, phone, role } = req.body;
 
+  // Ngăn chặn đăng ký tài khoản admin/staff công khai nếu hệ thống đã có quản trị/nhân viên
+  if (role === 'admin' || role === 'staff') {
+    const hasAdminOrStaff = await User.exists({ role: { $in: ['admin', 'staff'] } });
+    if (hasAdminOrStaff) {
+      res.status(400);
+      throw new Error('Đăng ký không hợp lệ. Hệ thống đã có tài khoản Quản trị viên hoặc Nhân viên!');
+    }
+  }
+
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     res.status(400);
@@ -69,6 +78,19 @@ const registerUser = asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       token: generateToken(user._id, user.role),
+    }
+  });
+});
+
+// @desc    Check if registration of admin/staff is allowed (true if no admin/staff exist in DB)
+// @route   GET /api/v1/auth/setup-status
+// @access  Public
+const getSetupStatus = asyncHandler(async (req, res) => {
+  const hasAdminOrStaff = await User.exists({ role: { $in: ['admin', 'staff'] } });
+  res.json({
+    success: true,
+    data: {
+      isSetup: !!hasAdminOrStaff
     }
   });
 });
@@ -171,4 +193,5 @@ module.exports = {
   getAllUsers,
   createUser,
   toggleUserLock,
+  getSetupStatus,
 };

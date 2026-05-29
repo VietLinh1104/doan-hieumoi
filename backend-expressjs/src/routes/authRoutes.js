@@ -6,10 +6,12 @@ const {
   getUserProfile,
   getAllUsers,
   createUser,
-  toggleUserLock
+  toggleUserLock,
+  getSetupStatus
 } = require('../controllers/authController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
+router.get('/setup-status', getSetupStatus);
 router.post('/register', registerUser);
 router.post('/login', authUser);
 router.get('/profile', protect, getUserProfile);

@@ -107,8 +107,8 @@ Admin --> UC_DeleteData
 ### 3.2. Bảng Đặc Tả Chi Tiết Các Use Case
 
 #### Nhóm 1: Khách lạ & Khách thân (Hệ thống Shop)
-- **UC_01: Đăng ký & Đăng nhập:** Cho phép người dùng tạo tài khoản mới và đăng nhập. Hệ thống tách biệt hoàn toàn giữa trang đăng ký dành cho Khách hàng (`/register` - đăng ký vai trò `user`) và trang đăng ký dành cho Quản trị viên (`/admin/register` - đăng ký vai trò `admin`). Sau khi đăng nhập, hệ thống ghi nhớ token và điều hướng về trang tương ứng với vai trò.
-- **UC_02: Tìm kiếm & Lọc sản phẩm:** Khách hàng tìm kiếm phụ tùng bằng tên hoặc mã OEM, lọc theo danh mục hoặc khoảng giá để tìm kiếm nhanh chóng.
+- **UC_01: Đăng ký & Đăng nhập:** Cho phép người dùng tạo tài khoản mới và đăng nhập. Hệ thống tách biệt hoàn toàn giữa trang đăng ký dành cho Khách hàng (`/register` - đăng ký vai trò `user`) và trang đăng ký dành cho Quản trị viên (`/admin/register` - đăng ký vai trò `admin`). Trang đăng ký Admin chỉ mở ra khi hệ thống chưa được thiết lập tài khoản quản trị hay nhân viên nào. Sau khi đăng nhập, hệ thống ghi nhớ token và điều hướng về trang tương ứng với vai trò.
+- **UC_02: Tìm kiếm & Lọc sản phẩm:** Khách hàng tìm kiếm phụ tùng bằng tên hoặc mã OEM (kết nối trực tiếp qua URL keyword và backend query), lọc theo danh mục hoặc khoảng giá (thực hiện truy vấn lọc và phân trang đồng bộ ở backend).
 - **UC_03: Đặt hàng & Thanh toán:** Khách thân nhập thông tin giao hàng, kiểm tra giỏ hàng và tạo đơn hàng mới. Hệ thống sẽ tự động trừ số lượng sản phẩm tương ứng trong kho.
 - **UC_04: Xem lịch sử & Hủy đơn:** Khách thân theo dõi trạng thái đơn hàng (Chờ xác nhận, Đang giao, Đã giao, Đã hủy). Khách thân được phép hủy đơn hàng nếu đơn hàng đang ở trạng thái Chờ xác nhận (`pending`). Khi hủy thành công, số lượng tồn kho sản phẩm sẽ được tự động hoàn lại database.
 
@@ -186,6 +186,7 @@ erDiagram
         String description "Mô tả sản phẩm"
         String compatible_cars "Xe tương thích"
         String main_image "Đường dẫn ảnh chính"
+        String image_url "Đường dẫn ảnh phụ/đồng bộ"
         ObjectId category_id FK "Liên kết danh mục"
         Boolean is_hidden "Trạng thái ẩn sản phẩm"
         Date created_at
@@ -257,6 +258,7 @@ Lưu trữ các thông tin chi tiết của từng phụ tùng, linh kiện ô t
 | `description` | `String` | Optional | Mô tả thông số kỹ thuật |
 | `compatible_cars` | `String` | Optional | Dòng xe tương thích (Toyota, Mazda...) |
 | `main_image` | `String` | `maxLength: 255` | Đường dẫn ảnh chính của sản phẩm |
+| `image_url` | `String` | `maxLength: 255` | Đường dẫn ảnh phụ/đồng bộ của sản phẩm |
 | `category_id` | `ObjectId` | `ref: 'Category'`, `required: true` | Liên kết đến danh mục sản phẩm |
 | `is_hidden` | `Boolean` | `default: false` | `true` để ẩn khỏi giao diện mua sắm |
 | `created_at` | `Date` | Tự động sinh | Thời điểm đăng sản phẩm |
