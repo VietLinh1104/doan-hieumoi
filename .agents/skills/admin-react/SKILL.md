@@ -23,13 +23,17 @@ Bạn (Antigravity) sẽ đóng vai trò là chuyên gia Frontend sử dụng Re
 - **Theme Button:** Được đặt ở header (ShopLayout) và topbar (AdminLayout) để người dùng chuyển đổi tức thì.
 
 ## 4. Phân Quyền Vai Trò Ở Frontend (Role-based Frontend Access)
-- **ProtectedRoute:** Route quản trị được bảo vệ bằng cách kiểm tra:
+- **ProtectedRoute (Quản trị):** Route quản trị được bảo vệ bằng cách kiểm tra:
   - Nếu chưa đăng nhập: Điều hướng về `/admin/login`.
   - Nếu vai trò không phải là `admin` hoặc `staff`: Điều hướng về `/` (trang Shop).
+- **CustomerProtectedRoute (Khách hàng):** Các route mua sắm nhạy cảm (như `/checkout`, `/orders/history`) được bảo vệ bằng cách kiểm tra:
+  - Nếu chưa đăng nhập: Điều hướng về `/login`.
 - **Sidebar & Menu:** Menu "Người dùng" (`/admin/users`) chỉ hiển thị đối với người dùng có vai trò `admin`. Trả về thông báo lỗi "Truy cập bị từ chối" nếu `staff` cố tình truy cập.
 - **Ẩn nút Xóa dữ liệu:** Trong các trang quản lý sản phẩm, danh mục và đơn hàng, các nút Xóa vĩnh viễn bị ẩn hoàn toàn đối với vai trò `staff` để tránh thao tác sai lệch dữ liệu.
 - **Ẩn/Hiện Sản phẩm:** Biểu mẫu Sản phẩm hỗ trợ thuộc tính `is_hidden` (checkbox) để nhân viên ẩn sản phẩm khỏi Shop thay vì xóa.
-- **Tách Biệt Trang Đăng Ký (Separate Registration Pages):**
+- **Tách Biệt Trang Đăng Nhập & Đăng Ký (Separate Login & Registration Pages):**
+  - **Trang đăng nhập Khách hàng (`/login`):** Sử dụng `ShopLoginPage.jsx` chuyên biệt cho khách hàng, hỗ trợ đăng nhập và tự động chuyển hướng về trang chủ mua sắm `/`.
+  - **Trang đăng nhập Admin (`/admin/login`):** Sử dụng `LoginPage.jsx` chuyên biệt cho Admin/Staff. Nếu người dùng đăng nhập thành công nhưng có vai trò khách hàng (`user`), hệ thống sẽ tự động hủy phiên (gọi `logout()`), hiển thị thông báo lỗi `"Tài khoản của bạn không có quyền truy cập trang quản trị!"` và giữ nguyên ở màn hình đăng nhập.
   - **Trang đăng ký Khách hàng (`/register`):** Sử dụng `ShopRegisterPage.jsx` để tạo tài khoản mới với vai trò `user` (Khách thân), sau đó tự động đăng nhập và chuyển hướng người dùng về trang chủ mua sắm `/`.
   - **Trang đăng ký Admin (`/admin/register`):** Sử dụng `RegisterPage.jsx` để tạo tài khoản mới với vai trò `admin`. Trang này chỉ hoạt động khi hệ thống chưa được thiết lập tài khoản quản trị/nhân viên nào (`setup-status` trả về `isSetup: false`). Nếu đã có tài khoản thiết lập, trang sẽ tự động chuyển hướng người dùng về trang `/admin/login`.
 
